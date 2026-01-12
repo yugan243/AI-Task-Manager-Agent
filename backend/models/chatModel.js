@@ -28,12 +28,17 @@ const addMessage = async (sessionId, role, content) => {
 const getSessionHistory = async (sessionId, limit=20) => {
     const { data, error } = await supabase
                                           .from('messages')
-                                          .select('role', 'content')
+                                          .select('*')
                                           .eq('session_id', sessionId)
                                           .order('created_at', { ascending: false })
                                           .limit(limit);
     if (error) throw error;
-    return data.reverse(); // Reverse to maintain chronological order
+    
+    const history = data.reverse().map(msg => ({ 
+                                role: msg.role, 
+                                content: msg.content 
+    }));
+    return history;
 }
 
 module.exports = { createSession, addMessage, getSessionHistory };
