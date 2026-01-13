@@ -34,7 +34,7 @@ const addTask = async (userId, taskContent, dueDate=null) => {
 const listTasks = async (userId) => {
     const { data, error } = await supabase
                                         .from('tasks')
-                                        .select('id', 'content', 'created_at', 'due_date')
+                                        .select('id, content, created_at, due_date')
                                         .eq('user_id', userId)
                                         .eq('is_completed', false)
                                         .order('created_at', {ascending: true});
@@ -49,7 +49,7 @@ const listTasks = async (userId) => {
         const dateStr = t.due_date 
             ? ` [Due: ${new Date(t.due_date).toLocaleDateString()}]` 
             : '';
-        return `- [${t.id}] ${t.content}${dateStr}`;
+        return `- [${t.id}] ${t.content} ${dateStr}`;
     }).join("\n");
 };
 
