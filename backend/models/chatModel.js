@@ -24,7 +24,7 @@ const addMessage = async (sessionId, role, content) => {
     return data;
 }
 
-// 3. Get history for the AI cpntext (Sliding window)
+// 3. Get history for the AI context (Sliding window)
 const getSessionHistory = async (sessionId, limit=20) => {
     const { data, error } = await supabase
                                           .from('messages')

@@ -12,6 +12,10 @@ app.get('/', (req, res) => {
     res.send('Hello AI world!');
 });
 
+// Create the session
+app.post('/sessions', chatController.startSession);
+
+// Send a message
 app.post('/chat', chatController.handleChat );
 
 
