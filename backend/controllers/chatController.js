@@ -51,7 +51,10 @@ const handleChat = async (req, res) => {
             addMessage(sessionId, 'assistant', aiReply)
         ]);
 
-        res.status(200).json({"AI Response": aiReply});
+        res.status(200).json({
+            response: aiReply,
+            sessionId: sessionId
+        });
 
     } catch (err) {
         console.error("Controller Error:", err);
