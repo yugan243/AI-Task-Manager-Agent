@@ -14,7 +14,7 @@ const addTask = async (userId, taskContent, dueDate=null) => {
     }
 
     const { data, error } =  await supabase
-                                          .from('tasts')
+                                          .from('tasks')
                                           .insert([newTask])
                                           .select()
                                           .single();
