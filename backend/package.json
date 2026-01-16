@@ -5,15 +5,17 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server",
-    "start": "node server"
+    "start": "node server",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@langchain/core": "^1.1.12",
+    "@langchain/core": "^1.1.15",
     "@langchain/google-genai": "^2.1.7",
+    "@langchain/langgraph": "^1.1.0",
     "@supabase/supabase-js": "^2.90.1",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
@@ -21,5 +23,9 @@
     "install": "^0.13.0",
     "langchain": "^1.2.7",
     "npm": "^10.9.4"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2"
   }
 }
