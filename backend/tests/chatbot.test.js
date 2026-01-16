@@ -27,7 +27,7 @@ describe('Chatbot Logic (LangGraph)', () => {
         // Check: Did we get text back?
         expect(typeof response).toBe('string');
         expect(response.length).toBeGreaterThan(0);
-    }, 50000);
+    }, 20000);
 
     test('should call addTask when user asks to add a task', async () => {
         // Setup: Pretend adding a task works perfectly
@@ -51,7 +51,7 @@ describe('Chatbot Logic (LangGraph)', () => {
         
         // Check 3: Did the AI reply to the user?
         expect(response).toBeTruthy();
-    },50000);
+    },20000);
 
     test('should handle multiple tasks (The Triple Threat)', async () => {
         // Setup: Pretend adding works
@@ -68,5 +68,5 @@ describe('Chatbot Logic (LangGraph)', () => {
         // Note: Sometimes the AI calls it 3 times, sometimes it batches them.
         // We check if it was called AT LEAST once.
         expect(taskTools.addTask).toHaveBeenCalled(); 
-    },50000);
+    },20000);
 });
