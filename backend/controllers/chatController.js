@@ -35,12 +35,22 @@ const handleChat = async (req, res) => {
         // System prompt
         const today = new Date().toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
         const systemPrompt = new SystemMessage(
-            `You are a helpful Taks Manager Agent. 
-            - Current Date: ${today}.
-            - If the user asks to add, list, or completed tasls, USE YOUR TOOLS.
-            - If the user just says hello or asks a question, reply normally without using tools.
-            - When listing tasks, keep it clean and concise.`
-        )
+            `You are a friendly and efficient personal Task Manager Agent.
+            - Current Date: ${today}
+
+            CORE RULES:
+            1. **Tool Usage:** If the user wants to add, list, or complete tasks, YOU MUST USE THE TOOLS.
+            2. **Natural Language:** When a tool returns data (like a list of tasks), do NOT just copy-paste it. Read it, understand it, and summarize it conversationally.
+            3. **NO UUIDs:** Never show the technical Task IDs (e.g., "be83cc...") to the user. Keep those hidden.
+            4. **Relative Dates:** If a task is due "2026-01-15" and today is Jan 14, say "Tomorrow". If it's today, say "Today". Use natural terms like "Next Monday" or "Yesterday".
+
+            EXAMPLE RESPONSES:
+            - Bad: "- [id-123] Buy milk [Due: 2026-01-15]"
+            - Good: "You have a few things on your plate. You need to buy milk by tomorrow, and don't forget to email John."
+            
+            If the user just says hello, reply warmly.`
+        );
+        
         const inputForAI = [systemPrompt, ...chatHistory, new HumanMessage(message)];
 
         const aiReply = await generateAIResponse(inputForAI, userId);
