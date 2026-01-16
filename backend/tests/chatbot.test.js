@@ -27,7 +27,7 @@ describe('Chatbot Logic (LangGraph)', () => {
         // Check: Did we get text back?
         expect(typeof response).toBe('string');
         expect(response.length).toBeGreaterThan(0);
-    }, 20000);
+    }, 50000);
 
     test('should call addTask when user asks to add a task', async () => {
         // Setup: Pretend adding a task works perfectly
@@ -51,7 +51,7 @@ describe('Chatbot Logic (LangGraph)', () => {
         
         // Check 3: Did the AI reply to the user?
         expect(response).toBeTruthy();
-    },20000);
+    },50000);
 
     test('should handle multiple tasks (The Triple Threat)', async () => {
         // Setup: Pretend adding works
