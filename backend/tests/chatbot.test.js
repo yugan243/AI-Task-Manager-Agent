@@ -1,4 +1,3 @@
-// backend/test/chatbot.test.js
 const { generateAIResponse } = require('../tools/chatbot');
 const taskTools = require('../tools/taskTools');
 
@@ -7,6 +6,7 @@ const taskTools = require('../tools/taskTools');
 jest.mock('../tools/taskTools');
 
 describe('Chatbot Logic (LangGraph)', () => {
+    console.log("DEBUG: API Key is:", process.env.GOOGLE_API_KEY ? "Loaded ✅" : "MISSING ❌")
 
     beforeEach(() => {
         // Clear counters before every test
@@ -51,7 +51,7 @@ describe('Chatbot Logic (LangGraph)', () => {
         
         // Check 3: Did the AI reply to the user?
         expect(response).toBeTruthy();
-    });
+    },20000);
 
     test('should handle multiple tasks (The Triple Threat)', async () => {
         // Setup: Pretend adding works
@@ -68,5 +68,5 @@ describe('Chatbot Logic (LangGraph)', () => {
         // Note: Sometimes the AI calls it 3 times, sometimes it batches them.
         // We check if it was called AT LEAST once.
         expect(taskTools.addTask).toHaveBeenCalled(); 
-    });
+    },20000);
 });
