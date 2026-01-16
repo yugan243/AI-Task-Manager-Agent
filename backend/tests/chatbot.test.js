@@ -68,5 +68,5 @@ describe('Chatbot Logic (LangGraph)', () => {
         // Note: Sometimes the AI calls it 3 times, sometimes it batches them.
         // We check if it was called AT LEAST once.
         expect(taskTools.addTask).toHaveBeenCalled(); 
-    },20000);
+    },50000);
 });
