@@ -6,7 +6,7 @@ const taskTools = require('../tools/taskTools');
 jest.mock('../tools/taskTools');
 
 describe('Chatbot Logic (LangGraph)', () => {
-    console.log("DEBUG: API Key is:", process.env.GOOGLE_API_KEY ? "Loaded ✅" : "MISSING ❌")
+    console.log("DEBUG: API Key is:", process.env.GOOGLE_API_KEY ? "Loaded" : "MISSING")
 
     beforeEach(() => {
         // Clear counters before every test
