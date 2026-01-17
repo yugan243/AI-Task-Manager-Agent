@@ -48,7 +48,7 @@ const generateAIResponse = async(chatHistory, userId) => {
         //1. Model (Brain)
         const model = new ChatGoogleGenerativeAI({
             apiKey: process.env.GOOGLE_API_KEY,
-            model: "gemini-2.5-flash-lite",
+            model: "gemini-2.5-flash",
             temperature: 0
         }).bindTools(tools);
 

@@ -56,10 +56,10 @@ const handleChat = async (req, res) => {
         const aiReply = await generateAIResponse(inputForAI, userId);
 
         // Save & respond
-        await Promise.all([
-            addMessage(sessionId, 'user', message),
-            addMessage(sessionId, 'assistant', aiReply)
-        ]);
+        
+        await addMessage(sessionId, 'user', message),
+        await addMessage(sessionId, 'assistant', aiReply)
+        
 
         res.status(200).json({
             response: aiReply,
