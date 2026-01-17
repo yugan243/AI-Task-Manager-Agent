@@ -84,5 +84,23 @@ const startSession = async (req, res) => {
     }
 }
 
+const getTasks =  async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: "UserId is required." });
 
-module.exports = { handleChat, startSession };
+    try {
+        const { data, error } = await supabase
+                                            .from('tasks')
+                                            .select('*')
+                                            .eq('user_id', userId)
+                                            .order('created_at', { ascending: true });
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.log("Error fetching tasks:", error);
+        res.status(500).json({ error: "Internal server error." });
+    }
+};
+
+
+module.exports = { handleChat, startSession, getTasks };
