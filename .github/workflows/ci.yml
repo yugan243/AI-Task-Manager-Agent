@@ -39,6 +39,7 @@ jobs:
       env:
         # We pull the key from the Secret you just created
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         # We use dummy values for Supabase because our tests mock it anyway
         SUPABASE_URL: "https://example.supabase.co"
         SUPABASE_KEY: "dummy_key"
