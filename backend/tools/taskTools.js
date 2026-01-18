@@ -1,3 +1,4 @@
+const { task } = require('@langchain/langgraph');
 const supabase = require('../config/supabaseClient');
 
 
@@ -72,4 +73,27 @@ const completeTask = async (userId, taskId) => {
     return `Task marked as completed: "${data[0].content}"`;
 };
 
-module.exports = { addTask, listTasks, completeTask };
+// Delete a task
+const deleteTask = async (userId, taskId) => {
+    const { error } = await supabase
+                                    .from('tasks')
+                                    .delete()
+                                    .eq('id', taskId)
+                                    .eq('user_id', userId);
+    if (error) throw error;
+    return true;
+};
+
+// Toggle task status (True <-> False)
+const toggleTaskCompletion = async (userId, taskId, currentStatus) => {
+    const { error } = await supabase
+                                    .from('tasks')
+                                    .update({ is_completed: !currentStatus })
+                                    .eq('id', taskId)
+                                    .eq('user_id', userId);
+    if (error) throw error;
+    return true;
+}
+
+
+module.exports = { addTask, listTasks, completeTask, deleteTask, toggleTaskCompletion };

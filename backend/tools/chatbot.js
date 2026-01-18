@@ -4,6 +4,7 @@ const z = require('zod');
 const { StateGraph, MessagesAnnotation } = require("@langchain/langgraph");
 const { ToolNode } = require("@langchain/langgraph/prebuilt");
 const { addTask, listTasks, completeTask } = require('./taskTools');
+const { searchInternet } = require('./searchTool');
 const dotenv = require('dotenv').config();
 
 
@@ -40,6 +41,14 @@ const generateAIResponse = async(chatHistory, userId) => {
                 func: async ({ task_id }) => {
                     return await completeTask(userId, task_id);
                 },
+            }),
+            new DynamicStructuredTool({
+                name: "google_search",
+                description: "Searches the internet for real-time info (weather, news, facts). Use this BEFORE adding a task if the user's request depends on external conditions (e.g., 'If it rains...').",
+                schema: z.object({
+                    query: z.string().describe("The search query, e.g., 'weather in Colombo tomorrow'")
+                }),
+                func: async ({ query }) => await searchInternet(query)
             }),
         ];
 

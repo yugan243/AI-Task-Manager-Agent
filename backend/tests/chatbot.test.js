@@ -1,12 +1,13 @@
 const { generateAIResponse } = require('../tools/chatbot');
 const taskTools = require('../tools/taskTools');
+const searchTool = require('../tools/searchTool');
 
 // 1. MOCK THE TOOLS
 // We tell Jest: "Don't actually touch the database, just pretend."
 jest.mock('../tools/taskTools');
+jest.mock('../tools/searchTool');
 
 describe('Chatbot Logic (LangGraph)', () => {
-    console.log("DEBUG: API Key is:", process.env.GOOGLE_API_KEY ? "Loaded" : "MISSING")
 
     beforeEach(() => {
         // Clear counters before every test
@@ -68,5 +69,32 @@ describe('Chatbot Logic (LangGraph)', () => {
         // Note: Sometimes the AI calls it 3 times, sometimes it batches them.
         // We check if it was called AT LEAST once.
         expect(taskTools.addTask).toHaveBeenCalled(); 
-    },20000);
+    },50000);
+
+    // NEW TEST: Verify the "Eyes" (Internet Access)
+    test('should call searchTool when user asks about weather', async () => {
+        // Setup: Pretend the search finds sunny weather
+        searchTool.searchInternet.mockResolvedValue("Search Results: It is sunny in Colombo.");
+        taskTools.addTask.mockResolvedValue("Task added.");
+
+        const history = [
+            { role: "user", content: "If it is sunny in Colombo, add a task to go for a walk." }
+        ];
+
+        const response = await generateAIResponse(history, "test-user-id");
+
+        // Check 1: Did it trigger the search?
+        expect(searchTool.searchInternet).toHaveBeenCalled();
+        
+        // Check 2: Did it successfully reason that it should add the task?
+        // Note: The AI must decide to call addTask based on the mocked search result
+        expect(taskTools.addTask).toHaveBeenCalledWith(
+            "test-user-id",
+            expect.stringContaining("walk"),
+            undefined
+        );
+
+        expect(response).toBeTruthy();
+    }, 50000); // Increased timeout for AI reasoning
+
 });

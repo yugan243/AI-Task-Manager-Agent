@@ -35,18 +35,26 @@ const handleChat = async (req, res) => {
         // System prompt
         const today = new Date().toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
         const systemPrompt = new SystemMessage(
-            `You are a friendly and efficient personal Task Manager Agent.
+            `You are Jarvis, a friendly and efficient personal Task Manager Agent.
             - Current Date: ${today}
 
             CORE RULES:
             1. **Tool Usage:** If the user wants to add, list, or complete tasks, YOU MUST USE THE TOOLS.
-            2. **Natural Language:** When a tool returns data (like a list of tasks), do NOT just copy-paste it. Read it, understand it, and summarize it conversationally.
-            3. **NO UUIDs:** Never show the technical Task IDs (e.g., "be83cc...") to the user. Keep those hidden.
-            4. **Relative Dates:** If a task is due "2026-01-15" and today is Jan 14, say "Tomorrow". If it's today, say "Today". Use natural terms like "Next Monday" or "Yesterday".
+            2. **Smart Retrieval:** If a user asks a question that depends on real-world data (like "Add task if it rains", "What is the stock price?", "Who won the game?"), YOU MUST USE the 'google_search' tool first.
+            3. **Reasoning Loop:** - Step 1: Search for the info (e.g., "Weather in Colombo").
+                - Step 2: Analyze the result.
+                - Step 3: Add the task ONLY if the condition is met.
+                - Step 4: Tell the user what you did and why.
+            4. **Natural Language:** When a tool returns data (like a list of tasks), do NOT just copy-paste it. Read it, understand it, and summarize it conversationally.
+            5. **NO UUIDs:** Never show the technical Task IDs (e.g., "be83cc...") to the user. Keep those hidden.
+            6. **Relative Dates:** If a task is due "2026-01-15" and today is Jan 14, say "Tomorrow". If it's today, say "Today". Use natural terms like "Next Monday" or "Yesterday".
 
             EXAMPLE RESPONSES:
             - Bad: "- [id-123] Buy milk [Due: 2026-01-15]"
             - Good: "You have a few things on your plate. You need to buy milk by tomorrow, and don't forget to email John."
+
+            User: "If it's raining in Colombo tomorrow, remind me to bring an umbrella."
+            You: (Calls google_search for "weather Colombo tomorrow") -> (Sees rain) -> (Calls add_task "Bring umbrella") -> "It looks like rain tomorrow, so I've added that task for you."
             
             If the user just says hello, reply warmly.`
         );
@@ -56,10 +64,10 @@ const handleChat = async (req, res) => {
         const aiReply = await generateAIResponse(inputForAI, userId);
 
         // Save & respond
-        await Promise.all([
-            addMessage(sessionId, 'user', message),
-            addMessage(sessionId, 'assistant', aiReply)
-        ]);
+        
+        await addMessage(sessionId, 'user', message),
+        await addMessage(sessionId, 'assistant', aiReply)
+        
 
         res.status(200).json({
             response: aiReply,
@@ -84,5 +92,23 @@ const startSession = async (req, res) => {
     }
 }
 
+const getTasks =  async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: "UserId is required." });
 
-module.exports = { handleChat, startSession };
+    try {
+        const { data, error } = await supabase
+                                            .from('tasks')
+                                            .select('*')
+                                            .eq('user_id', userId)
+                                            .order('created_at', { ascending: true });
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.log("Error fetching tasks:", error);
+        res.status(500).json({ error: "Internal server error." });
+    }
+};
+
+
+module.exports = { handleChat, startSession, getTasks };
