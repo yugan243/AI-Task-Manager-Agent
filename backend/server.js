@@ -1,13 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-app.use(cors());
+
 const path = require('path');
 const chatController = require('./controllers/chatController');
 const chatModel = require('./models/chatModel');
 const { deleteTask, toggleTaskCompletion } = require('./tools/taskTools');
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
+
+const corsOptions = {
+  origin: ['https://yugii.me', 'https://www.yugii.me', 'http://localhost:3000'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
@@ -66,10 +73,8 @@ app.patch('/tasks/:id/toggle', async (req, res) => {
 });
 
 
-if (require.main === module) {
-    app.listen(PORT, () => {
-        console.log(`Server running on port http://localhost:${PORT}`);
-    });
-}
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+});
 
 module.exports = app;
