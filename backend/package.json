@@ -23,6 +23,7 @@
     "express": "^5.2.1",
     "install": "^0.13.0",
     "langchain": "^1.2.7",
+    "node-fetch": "^2.7.0",
     "npm": "^10.9.4"
   },
   "devDependencies": {
