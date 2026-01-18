@@ -173,7 +173,7 @@ export default function Home() {
 
   const handleSocialLogin = async (provider) => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: provider, options: { redirectTo: window.location.origin }
+      provider: provider, options: { redirectTo: `${window.location.origin}/auth/callback` }
     });
     if (error) alert(`Login failed: ${error.message}`);
   };
@@ -181,7 +181,12 @@ export default function Home() {
   const handleMagicLinkSubmit = async (e) => {
     e.preventDefault();
     if (!emailInput) return;
-    const { error } = await supabase.auth.signInWithOtp({ email: emailInput });
+    const { error } = await supabase.auth.signInWithOtp({ 
+      email: emailInput,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      } 
+    });
     if (error) {
       alert(error.message); 
     } else {
