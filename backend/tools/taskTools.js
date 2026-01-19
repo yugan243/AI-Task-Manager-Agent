@@ -4,6 +4,7 @@ const supabase = require('../config/supabaseClient');
 
 // Tool 1: Add a task 
 const addTask = async (userId, taskContent, dueDate=null) => {
+    console.log('Using the tool: addTask');
     const newTask = {
         user_id: userId,
         content: taskContent,
@@ -33,9 +34,10 @@ const addTask = async (userId, taskContent, dueDate=null) => {
 
 // Tool 2: Listing pending tasks
 const listTasks = async (userId) => {
+    console.log('Using the tool: listTasks');
     const { data, error } = await supabase
                                         .from('tasks')
-                                        .select('id, content, created_at, due_date')
+                                        .select('id, content, is_completed, created_at, due_date')
                                         .eq('user_id', userId)
                                         .eq('is_completed', false)
                                         .order('created_at', {ascending: true});
@@ -58,6 +60,7 @@ const listTasks = async (userId) => {
 // Tool 3: Complete a task
 
 const completeTask = async (userId, taskId) => {
+    console.log('Using the tool: completeTask');
     const { data, error } = await supabase
                                           .from('tasks')
                                           .update({'is_completed': true})
