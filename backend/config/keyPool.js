@@ -34,20 +34,20 @@ const KeyManager = {
 
         // If we ran out of keys for this model...
         if (keyIndex >= apiKeys.length) {
-            console.log(`⚠️ All keys exhausted for ${models[modelIndex]}. Switching Model Tier...`);
+            console.log(`All keys exhausted for ${models[modelIndex]}. Switching Model Tier...`);
             keyIndex = 0; // Reset key index
             modelIndex++; // Move to next model
         }
 
         // If we ran out of Models too (Complete Exhaustion)...
         if (modelIndex >= models.length) {
-            console.error("🚨 CRITICAL: All Keys and Models exhausted. Resetting to start.");
+            console.error("CRITICAL: All Keys and Models exhausted. Resetting to start.");
             keyIndex = 0;
             modelIndex = 0;
             // Note: In production, you might want to pause here, but resetting allows retries.
         }
 
-        console.log(`🔄 Rotated Config: [${previous}] ➔ [Key-${keyIndex + 1} (${models[modelIndex]})]`);
+        console.log(`Rotated Config: [${previous}] ➔ [Key-${keyIndex + 1} (${models[modelIndex]})]`);
     },
 
     // Helper to calculate max total attempts possible

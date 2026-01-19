@@ -72,6 +72,10 @@ app.patch('/tasks/:id/toggle', async (req, res) => {
     }
 });
 
+// Keep-Alive Endpoint
+app.get('/ping', (req, res) => {
+    res.status(200).send('Pong');
+});
 
 if (require.main === module) {
     app.listen(PORT, '0.0.0.0', () => {
