@@ -1,17 +1,28 @@
 const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
-const {DynamicStructuredTool, tool } = require("@langchain/core/tools");
+const { DynamicStructuredTool } = require("@langchain/core/tools");
 const z = require('zod');
 const { StateGraph, MessagesAnnotation } = require("@langchain/langgraph");
 const { ToolNode } = require("@langchain/langgraph/prebuilt");
-const { addTask, listTasks, completeTask } = require('./taskTools');
+const { addTask, listTasks, completeTask } = require('./taskTools'); 
 const { searchInternet } = require('./searchTool');
+const KeyManager = require('../config/keyPool'); 
 const dotenv = require('dotenv').config();
 
 
-
 // The main generator function
-const generateAIResponse = async(chatHistory, userId) => {
-    try {
+const generateAIResponse = async (chatHistory, userId) => {
+    // Total retries = Total Keys * Total Models. 
+    // Example: 10 keys * 2 models = 20 max attempts.
+    const maxAttempts = KeyManager.getMaxAttempts();
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        // 1. Get the globally active config
+        const { apiKey, modelName, debugId } = KeyManager.getCurrentConfig();
+        
+        try {
+            console.log(`[Attempt ${attempt + 1}] Using: ${debugId}`);
+
+            // --- Define Tools ---
         const tools = [
             new DynamicStructuredTool({
                 name: "add_task",
@@ -52,64 +63,77 @@ const generateAIResponse = async(chatHistory, userId) => {
             }),
         ];
 
-        // Setup model and nodes
+            // 1. Initialize Model
+            const model = new ChatGoogleGenerativeAI({
+                apiKey: apiKey,
+                model: modelName,
+                temperature: 0
+            }).bindTools(tools);
 
-        //1. Model (Brain)
-        const model = new ChatGoogleGenerativeAI({
-            apiKey: process.env.GOOGLE_API_KEY,
-            model: "gemini-2.5-flash-lite",
-            temperature: 0
-        }).bindTools(tools);
+            // 2. Build & Execute Graph
+            const agentNode = async (state) => {
+                const { messages } = state;
+                const response = await model.invoke(messages);
+                return { messages: [response] };
+            };
+            const toolNode = new ToolNode(tools);
 
-        // 2. Node: The agent
-        // It looks at history and decides what to do
-        const agentNode = async (state) => {
-            const { messages } = state;
-            const response = await model.invoke(messages);
-            return  { messages: [response]};
-        };
+            const shouldContinue = (state) => {
+                const { messages } = state;
+                const lastMessage = messages[messages.length - 1];
+                
+                if (lastMessage.tool_calls?.length) {
+                    return "tools";
+                }
 
-        // 3. Node: The tools (prebuilt)
-        const toolNode = new ToolNode(tools);
-
-        // 4. Define the logic
-        const shouldContinue = (state) => {
-            const { messages } = state;
-            const lastMessage = messages[messages.length - 1];
-            
-            if (lastMessage.tool_calls?.length) {
-                return "tools";
+                return "__end__";
             }
 
-            return "__end__";
+            // Build the graph
+            const workflow = new StateGraph(MessagesAnnotation)
+                .addNode("agent", agentNode)
+                .addNode("tools", toolNode)
+                .addEdge("__start__", "agent")
+                .addConditionalEdges(
+                    "agent",
+                    shouldContinue,
+                    {
+                        tools: "tools",
+                        __end__: "__end__"
+                    }
+                )
+                .addEdge("tools", "agent")
+                .compile();
+
+            const finalState = await workflow.invoke({ "messages": chatHistory });
+            
+            // We return immediately. The global state REMAINS on this key 
+            // so the next user uses this same working key/model.
+            return finalState.messages[finalState.messages.length - 1].content;
+
+        } catch (error) {
+            // --- CHECK FOR RATE LIMITS ---
+            const isRateLimit = error.message.includes("429") || 
+                                error.message.includes("quota") || 
+                                error.message.includes("Resource has been exhausted");
+
+            if (isRateLimit) {
+                console.warn(`Quota Hit on ${debugId}. Triggering Global Rotation...`);
+                
+                // ACTION: Rotate the Global State immediately.
+                // The next loop iteration (and the next User) will use the new config.
+                KeyManager.rotate(); 
+                
+                continue; // Retry loop with new key
+            } else {
+                // Non-retryable error (logic bug, network down, etc)
+                console.error(" Critical Error:", error);
+                return "I encountered an internal system error.";
+            }
         }
-
-        // Build the graph
-        const workflow = new StateGraph(MessagesAnnotation)
-            .addNode("agent", agentNode)
-            .addNode("tools", toolNode)
-            .addEdge("__start__", "agent")
-            .addConditionalEdges(
-                "agent",
-                shouldContinue,
-                {
-                    tools: "tools",
-                    __end__: "__end__"
-                }
-            )
-            .addEdge("tools", "agent")
-            .compile();
-
-        // Pass the existing chat history to the graph
-        const finalState = await workflow.invoke({ "messages": chatHistory });
-
-        // Return the content of the last message as the AI's reply
-        return finalState.messages[finalState.messages.length - 1].content;
-    } catch (error) {
-        console.error("Langgraph Error", error);
-        return "I'm sorry, I encountered an error while processing your request."
     }
-};
 
+    return "System Overload: All available AI models are currently busy. Please try again in few minutes.";
+};
 
 module.exports = { generateAIResponse };

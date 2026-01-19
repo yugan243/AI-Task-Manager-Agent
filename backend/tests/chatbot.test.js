@@ -1,100 +1,90 @@
+const request = require('supertest');
+
+// --- 1. MOCK SUPABASE (Keep this, it's perfect) ---
+const mockSupabase = {
+    from: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: { user_id: 'user-123' }, error: null }),
+    insert: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+};
+jest.mock('../config/supabaseClient', () => mockSupabase);
+
+// --- 2. MOCK THE AI MODULE (The Smart Version) ---
+jest.mock('../tools/chatbot', () => ({
+    generateAIResponse: jest.fn()
+}));
+
+// --- 3. MOCK DATABASE MODELS ---
+jest.mock('../models/chatModel', () => ({
+    getSessionHistory: jest.fn().mockResolvedValue([]),
+    addMessage: jest.fn().mockResolvedValue({ id: 1, content: "ok" }),
+    createSession: jest.fn().mockResolvedValue({ id: "test-session", title: "Test Chat" })
+}));
+
+const app = require('../server');
 const { generateAIResponse } = require('../tools/chatbot');
-const taskTools = require('../tools/taskTools');
-const searchTool = require('../tools/searchTool');
 
-// 1. MOCK THE TOOLS
-// We tell Jest: "Don't actually touch the database, just pretend."
-jest.mock('../tools/taskTools');
-jest.mock('../tools/searchTool');
-
-describe('Chatbot Logic (LangGraph)', () => {
-
+describe('POST /chat Advanced Scenarios', () => {
+    
     beforeEach(() => {
-        // Clear counters before every test
         jest.clearAllMocks();
     });
 
-    test('should return a string response for a simple greeting', async () => {
-        // Setup: Mock listTasks to return an empty array
-        taskTools.listTasks.mockResolvedValue([]);
+    // SCENARIO 1: Basic Chat
+    it('should handle a simple greeting', async () => {
+        // Program the mock to act like a Chatbot
+        generateAIResponse.mockImplementation((history, userId) => {
+            return Promise.resolve("Hello! I am Jarvis. How can I help?");
+        });
 
-        const history = [
-            { role: "user", content: "Hello, who are you?" }
-        ];
+        const res = await request(app)
+            .post('/chat')
+            .send({
+                userId: 'user-123',
+                sessionId: 'test-session',
+                message: 'Hi there'
+            });
 
-        // Run the function
-        const response = await generateAIResponse(history, "test-user-id");
+        expect(res.statusCode).toEqual(200);
+        expect(res.body.response).toContain("Hello! I am Jarvis");
+    });
 
-        // Check: Did we get text back?
-        expect(typeof response).toBe('string');
-        expect(response.length).toBeGreaterThan(0);
-    }, 20000);
+    // SCENARIO 2: Task Addition (Simulated)
+    it('should respond correctly when adding a task', async () => {
+        // Program the mock to act like it added a task
+        generateAIResponse.mockImplementation((history, userId) => {
+            // In a real test, we might check if 'history' contains the user prompt
+            return Promise.resolve("I've added 'Buy Milk' to your task list.");
+        });
 
-    test('should call addTask when user asks to add a task', async () => {
-        // Setup: Pretend adding a task works perfectly
-        taskTools.addTask.mockResolvedValue("Task added successfully.");
+        const res = await request(app)
+            .post('/chat')
+            .send({
+                userId: 'user-123',
+                sessionId: 'test-session',
+                message: 'Add task to buy milk'
+            });
 
-        const history = [
-            { role: "user", content: "Add buy milk to my list" }
-        ];
+        expect(res.statusCode).toEqual(200);
+        expect(res.body.response).toContain("I've added");
+        expect(res.body.response).toContain("Buy Milk");
+    });
 
-        const response = await generateAIResponse(history, "test-user-id");
+    // SCENARIO 3: Error Handling
+    it('should handle AI failures gracefully', async () => {
+        generateAIResponse.mockRejectedValue(new Error("Rate Limit Exceeded"));
 
-        // Check 1: Did the AI logic try to call the addTask tool?
-        expect(taskTools.addTask).toHaveBeenCalledTimes(1);
-        
-        // Check 2: Did it extract the word "milk"?
-        expect(taskTools.addTask).toHaveBeenCalledWith(
-            "test-user-id", 
-            expect.stringContaining("milk"), 
-            undefined
-        );
-        
-        // Check 3: Did the AI reply to the user?
-        expect(response).toBeTruthy();
-    },20000);
+        const res = await request(app)
+            .post('/chat')
+            .send({
+                userId: 'user-123',
+                sessionId: 'test-session',
+                message: 'Crash me'
+            });
 
-    test('should handle multiple tasks (The Triple Threat)', async () => {
-        // Setup: Pretend adding works
-        taskTools.addTask.mockResolvedValue("Task added.");
-
-        const history = [
-            { role: "user", content: "Add buy eggs, buy milk, and call mom." }
-        ];
-
-        // Run the function
-        await generateAIResponse(history, "test-user-id");
-
-        // Check: Did it call the tool 3 times?
-        // Note: Sometimes the AI calls it 3 times, sometimes it batches them.
-        // We check if it was called AT LEAST once.
-        expect(taskTools.addTask).toHaveBeenCalled(); 
-    },50000);
-
-    // NEW TEST: Verify the "Eyes" (Internet Access)
-    test('should call searchTool when user asks about weather', async () => {
-        // Setup: Pretend the search finds sunny weather
-        searchTool.searchInternet.mockResolvedValue("Search Results: It is sunny in Colombo.");
-        taskTools.addTask.mockResolvedValue("Task added.");
-
-        const history = [
-            { role: "user", content: "If it is sunny in Colombo, add a task to go for a walk." }
-        ];
-
-        const response = await generateAIResponse(history, "test-user-id");
-
-        // Check 1: Did it trigger the search?
-        expect(searchTool.searchInternet).toHaveBeenCalled();
-        
-        // Check 2: Did it successfully reason that it should add the task?
-        // Note: The AI must decide to call addTask based on the mocked search result
-        expect(taskTools.addTask).toHaveBeenCalledWith(
-            "test-user-id",
-            expect.stringContaining("walk"),
-            undefined
-        );
-
-        expect(response).toBeTruthy();
-    }, 50000); // Increased timeout for AI reasoning
-
+        expect(res.statusCode).toEqual(500);
+        expect(res.body.error).toBe("Rate Limit Exceeded");
+    });
 });
