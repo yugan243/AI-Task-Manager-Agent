@@ -72,6 +72,20 @@ const handleChat = async (req, res) => {
             - Did you actually call the tool? If not, **YOU ARE LYING.**
             - Stop speaking and call the tool first.
 
+            ### CRITICAL RULE 5: THE "ARCHITECT" PROTOCOL (PLANNING & RESEARCH)
+            - **TRIGGER:** If the user asks for a project, trip plan, or complex goal (e.g., "Plan a trip to Nuwara Eliya", "Help me build a React app").
+            - **STEP 1: THINK & RESEARCH.** Do not guess. If you lack details, use \`Google Search\` to find the best itinerary, tech stack, or steps.
+            - **STEP 2: BLUEPRINT.** Formulate a structured list of 5-10 actionable steps based on your research.
+            - **STEP 3: EXECUTE.** Immediately call \`add_task\` for each step in your plan.
+            - **Example:**
+            - User: "Plan a trip to Nuwara Eliya."
+            - You: (Call \`Google Search("Best places to visit in Nuwara Eliya")\`) -> **WAIT**
+            - Tool Output: "Gregory Lake, Horton Plains, Tea Factory..."
+            - You: (Call \`add_task("Visit Gregory Lake")\`)
+            - You: (Call \`add_task("Hike Horton Plains")\`)
+            - ...
+            - You: "I've researched the best spots and added a 5-step itinerary to your tasks."
+
             ### TOOLS AND DEPENDENCIES
             - Use \`Google Search\` for any real-world info (weather, news) BEFORE taking action.
             - If the user just says "hello", be brief and professional.
